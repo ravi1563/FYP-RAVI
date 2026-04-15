@@ -87,3 +87,148 @@ Python, Pandas, NumPy, Scikit-learn, Optuna, SHAP, Matplotlib
 **Ravi Kiran Deevi**  
 MSc Data Science  
 University of Hertfordshire
+
+
+# Code Workflow
+
+## 1. Import Required Libraries
+```python
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+```
+
+---
+
+## 2. Load Dataset
+```python
+df = pd.read_csv("Medicaldataset.csv")
+df.head()
+```
+
+---
+
+## 3. Exploratory Data Analysis (EDA)
+### Dataset Shape and Columns
+```python
+df.shape
+df.columns
+```
+
+### Missing Values
+```python
+df.isnull().sum()
+```
+
+### Statistical Summary
+```python
+df.describe()
+```
+
+### Target Distribution
+```python
+sns.countplot(x='Result', data=df)
+plt.title("Class Distribution")
+plt.show()
+```
+
+### Feature Distribution
+```python
+df.hist(figsize=(12,10))
+plt.tight_layout()
+plt.show()
+```
+
+### Correlation Heatmap
+```python
+corr = df.corr(numeric_only=True)
+sns.heatmap(corr, annot=True, cmap="coolwarm")
+plt.show()
+```
+
+---
+
+## 4. Data Preprocessing
+```python
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.model_selection import train_test_split
+
+df = df.dropna()
+
+X = df.drop("Result", axis=1)
+y = df["Result"]
+
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X_scaled, y, test_size=0.2, random_state=42
+)
+```
+
+---
+
+## 5. Model Training
+```python
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
+
+lr = LogisticRegression()
+svm = SVC(probability=True)
+rf = RandomForestClassifier()
+
+lr.fit(X_train, y_train)
+svm.fit(X_train, y_train)
+rf.fit(X_train, y_train)
+```
+
+---
+
+## 6. Model Evaluation
+```python
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+
+pred_rf = rf.predict(X_test)
+
+accuracy_score(y_test, pred_rf)
+precision_score(y_test, pred_rf)
+recall_score(y_test, pred_rf)
+f1_score(y_test, pred_rf)
+```
+
+---
+
+## 7. Hyperparameter Tuning (Optuna)
+```python
+import optuna
+
+def objective(trial):
+    n_estimators = trial.suggest_int("n_estimators", 50, 300)
+    max_depth = trial.suggest_int("max_depth", 3, 20)
+
+    model = RandomForestClassifier(
+        n_estimators=n_estimators,
+        max_depth=max_depth
+    )
+
+    model.fit(X_train, y_train)
+    preds = model.predict(X_test)
+
+    return f1_score(y_test, preds)
+
+study = optuna.create_study(direction="maximize")
+study.optimize(objective, n_trials=20)
+```
+
+---
+
+## 8. Cross Validation
+```python
+from sklearn.model_selection import cross_val_score
+
+scores = cross_val_score(rf, X_scaled, y, cv=5)
+print(scores.mean())
+print(scores.std())
+```
